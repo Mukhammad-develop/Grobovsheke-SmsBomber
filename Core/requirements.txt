@@ -1,2 +1,3 @@
 flet
 aiohttp
+python-telegram-bot

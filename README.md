@@ -29,7 +29,14 @@
   ```
   python gui.py
   ```
-# 🐧 Linux
+- **Запуск Telegram бота**
+  ```
+  set BOT_TOKEN=your_token
+  python bot.py
+  # или
+  python bot.py --token your_token
+  ```
+# 🐧 Linux / macOS
 - **Установка**
   - ***установку необходимо проводить в venv окружении***
   ```
@@ -39,6 +46,13 @@
   ```
   cd Grobovsheke-SmsBomber
   python3 start.py
+  ```
+- **Запуск Telegram бота**
+  ```
+  export BOT_TOKEN=your_token
+  python3 bot.py
+  # или
+  python3 bot.py --token your_token
   ```
   
 # ⚡️ Дополнительно
