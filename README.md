@@ -33,10 +33,14 @@
   ```
   set BOT_TOKEN=your_token
   python bot.py
+
   # или
   python bot.py --token your_token
   ```
 # 🐧 Linux / macOS
+
+  ```
+
 - **Установка**
   - ***установку необходимо проводить в venv окружении***
   ```
@@ -51,8 +55,11 @@
   ```
   export BOT_TOKEN=your_token
   python3 bot.py
+
   # или
   python3 bot.py --token your_token
+
+
   ```
   
 # ⚡️ Дополнительно
