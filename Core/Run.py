@@ -2,6 +2,8 @@ from asyncio import ensure_future, gather, run
 from aiohttp import ClientSession
 from typing import Optional, Callable
 
+
+
 from threading import Event
 
 from Core.Attack.Services import urls
@@ -35,6 +37,8 @@ async def request(session, url, info_callback: Optional[Callable[[dict], None]] 
 
 async def async_attacks(number: str, info_callback: Optional[Callable[[dict], None]] = None):
 
+
+
     async with ClientSession() as session:
         services = (urls(number) + feedback_urls(number)) if check_config()['feedback'] == 'True' else urls(number)
         tasks = [ensure_future(request(session, service, info_callback)) for service in services]
@@ -50,7 +54,7 @@ def start_async_attacks(
     progress_callback: Optional[Callable[[int], None]] = None,
     info_callback: Optional[Callable[[dict], None]] = None,
 ) -> int:
-    """Run attack `replay` times and return completed cycles."""
+    # Run the attack `replay` times and return the number of completed cycles.
     # Stop early if `stop_event` is set.
     # `progress_callback` receives the completed cycle count after each cycle.
     # `info_callback` is called for each request with its info dictionary.
@@ -63,5 +67,6 @@ def start_async_attacks(
         completed += 1
         if progress_callback:
             progress_callback(completed)
+
 
     return completed
