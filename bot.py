@@ -13,7 +13,7 @@ import asyncio
 import os
 import threading
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, Update
 from telegram.ext import (
     ApplicationBuilder,
     CallbackQueryHandler,
@@ -32,12 +32,22 @@ from Core.Run import start_async_attacks
 NUMBER, REPEAT = range(2)
 
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Entry point for /start command."""
+async def show_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Show main menu with reply buttons."""
     user_id = update.effective_user.id if update.effective_user else 'unknown user'
     print(f"/start from {user_id}")
-    await update.message.reply_text("📱 Введите номер телефона без '+'")
+    keyboard = [["🚀 Start attack"], ["📜 History of Attacks"], ["💰 Balance"]]
+    await update.message.reply_text(
+        "Выберите действие:",
+        reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True),
+    )
 
+
+async def start_attack(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Begin attack conversation after user presses Start attack."""
+    user_id = update.effective_user.id if update.effective_user else 'unknown user'
+    print(f"Start attack pressed by {user_id}")
+    await update.message.reply_text("📱 Введите номер телефона без '+'")
     return NUMBER
 
 
@@ -85,8 +95,39 @@ async def get_repeats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
         ),
     )
 
+    loop = asyncio.get_running_loop()
+
+    async def send_progress(count: int) -> None:
+        await context.bot.send_message(
+            chat_id=message.chat_id, text=f"🔁 Повторы: {count}/{repeats}"
+        )
+
+    async def send_info(info: dict) -> None:
+        await context.bot.send_message(
+            chat_id=message.chat_id,
+            text=(
+                "🌐 Запрос: "
+                f"{info.get('website', 'N/A')} | {info.get('attack', 'N/A')} | "
+                f"{info.get('country', 'N/A')} | anonymous: {info.get('anonymous', 'N/A')}"
+            ),
+        )
+
+    def progress_callback(count: int) -> None:
+        loop.call_soon_threadsafe(lambda: context.application.create_task(send_progress(count)))
+
+    def info_callback(info: dict) -> None:
+        loop.call_soon_threadsafe(lambda: context.application.create_task(send_info(info)))
+
     async def run_attack() -> None:
-        completed = await asyncio.to_thread(start_async_attacks, number, repeats, stop_event)
+        completed = await asyncio.to_thread(
+            start_async_attacks,
+            number,
+            repeats,
+            stop_event,
+            progress_callback,
+            info_callback,
+        )
+
         try:
             await context.bot.edit_message_reply_markup(
                 chat_id=message.chat_id, message_id=message.message_id, reply_markup=None
@@ -146,6 +187,11 @@ async def history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text('📜 История атак:\n' + '\n'.join(lines))
 
 
+async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Placeholder for balance button."""
+    await update.message.reply_text('💰 Функция баланса в разработке.')
+
+
 def main() -> None:
 
     parser = argparse.ArgumentParser(description='Run the Grobovsheke Telegram bot')
@@ -158,11 +204,11 @@ def main() -> None:
     if not token:
         raise RuntimeError('Provide bot token via --token or BOT_TOKEN env variable')
 
-
     application = ApplicationBuilder().token(token).build()
 
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('start', start)],
+        entry_points=[MessageHandler(filters.Regex('^🚀 Start attack$'), start_attack)],
+
         states={
             NUMBER: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_number)],
             REPEAT: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_repeats)],
@@ -170,9 +216,12 @@ def main() -> None:
         fallbacks=[CommandHandler('cancel', cancel)],
     )
 
+    application.add_handler(CommandHandler('start', show_menu))
     application.add_handler(conv_handler)
     application.add_handler(CallbackQueryHandler(stop_attack, pattern=r'^stop_\d+$'))
     application.add_handler(CommandHandler('history', history))
+    application.add_handler(MessageHandler(filters.Regex('^📜 History of Attacks$'), history))
+    application.add_handler(MessageHandler(filters.Regex('^💰 Balance$'), balance))
 
 
     application.run_polling()
