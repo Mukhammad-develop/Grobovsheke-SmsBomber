@@ -3,6 +3,7 @@
 The bot asks for a phone number and a repeat count and then
 launches the existing asynchronous attack from Core.Run.
 
+
 Provide the bot token either via the ``BOT_TOKEN`` environment variable
 or with the ``--token`` command-line option.
 """
@@ -16,6 +17,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMa
 from telegram.ext import (
     ApplicationBuilder,
     CallbackQueryHandler,
+
     CommandHandler,
     ContextTypes,
     ConversationHandler,
@@ -53,12 +55,14 @@ async def get_number(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Receive phone number from user."""
     number = update.message.text.strip()
     if not number.isdigit():
+
         await update.message.reply_text('❗ Пожалуйста, отправьте только цифры номера.')
         return NUMBER
     context.user_data['number'] = number
     user_id = update.effective_user.id if update.effective_user else 'unknown user'
     print(f"Received number {number} from {user_id}")
     await update.message.reply_text('🔁 Сколько повторов? (1-1000)')
+
     return REPEAT
 
 
@@ -123,6 +127,7 @@ async def get_repeats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
             progress_callback,
             info_callback,
         )
+
         try:
             await context.bot.edit_message_reply_markup(
                 chat_id=message.chat_id, message_id=message.message_id, reply_markup=None
@@ -142,6 +147,7 @@ async def get_repeats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 
     task = context.application.create_task(run_attack())
     attacks[attack_id] = {'stop': stop_event, 'task': task}
+
 
     return ConversationHandler.END
 
@@ -187,6 +193,7 @@ async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 def main() -> None:
+
     parser = argparse.ArgumentParser(description='Run the Grobovsheke Telegram bot')
     parser.add_argument('--token', help='Telegram bot token')
     args = parser.parse_args()
@@ -201,6 +208,7 @@ def main() -> None:
 
     conv_handler = ConversationHandler(
         entry_points=[MessageHandler(filters.Regex('^🚀 Start attack$'), start_attack)],
+
         states={
             NUMBER: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_number)],
             REPEAT: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_repeats)],
@@ -214,6 +222,7 @@ def main() -> None:
     application.add_handler(CommandHandler('history', history))
     application.add_handler(MessageHandler(filters.Regex('^📜 History of Attacks$'), history))
     application.add_handler(MessageHandler(filters.Regex('^💰 Balance$'), balance))
+
 
     application.run_polling()
 
