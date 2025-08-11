@@ -50,13 +50,11 @@ def start_async_attacks(
     progress_callback: Optional[Callable[[int], None]] = None,
     info_callback: Optional[Callable[[dict], None]] = None,
 ) -> int:
-    """Run attack ``replay`` times and return completed cycles.
+    """Run attack `replay` times and return completed cycles."""
+    # Stop early if `stop_event` is set.
+    # `progress_callback` receives the completed cycle count after each cycle.
+    # `info_callback` is called for each request with its info dictionary.
 
-    If ``stop_event`` is provided and set, the attack stops early.
-    ``progress_callback`` is called with the completed cycle count after each cycle.
-    ``info_callback`` is called for each request with its info dictionary.
-
-    """
     completed = 0
     for _ in range(int(replay)):
         if stop_event and stop_event.is_set():
